@@ -36,10 +36,37 @@ resource "google_pubsub_topic" "gcr" {
   name    = "gcr"
 }
 
-# Cloud Build Trigger
-resource "google_cloudbuild_trigger" "realworld_app" {
+# Cloud Build Triggers
+resource "google_cloudbuild_trigger" "realworld_example_gcr_push_to_main" {
   project     = google_project.realworld_example.project_id
+  name        = "realworld-example-app-github-push-to-${var.branch_name}"
   description = "GitHub Repository Trigger ${var.repo_owner}/${var.repo_name} (${var.branch_name})"
+
+  github {
+    owner = var.repo_owner
+    name  = var.repo_name
+    push {
+      branch = var.branch_name
+    }
+  }
+
+  filename = "cloudbuild.yaml"
+
+  substitutions = {
+    _ENV            = var.environment
+    _TFSTATE_BUCKET = google_storage_bucket.tfstate.name
+    _REGION         = var.region
+  }
+
+  depends_on = [
+    google_project_service.cloudbuild,
+  ]
+}
+
+resource "google_cloudbuild_trigger" "realworld_example_gcr_pub_sub" {
+  project     = google_project.realworld_example.project_id
+  name        = "realworld-example-app-gcp-pub-sub"
+  description = "GitHub Repository Trigger ${var.repo_owner}/${var.repo_name} (${var.branch_name}) gcr Pub/Sub"
 
   pubsub_config {
     topic = google_pubsub_topic.gcr.id
@@ -63,6 +90,39 @@ resource "google_cloudbuild_trigger" "realworld_app" {
     _TFSTATE_BUCKET = google_storage_bucket.tfstate.name
     _REGION         = var.region
   }
+
+  depends_on = [
+    google_project_service.cloudbuild,
+  ]
+}
+
+resource "google_cloudbuild_trigger" "realworld_example_manual" {
+  project     = google_project.realworld_example.project_id
+  name        = "realworld-example-app-manual"
+  description = "GitHub Repository Trigger ${var.repo_owner}/${var.repo_name} (${var.branch_name}) Manual"
+
+  source_to_build {
+    uri       = "https://github.com/${var.repo_owner}/${var.repo_name}"
+    ref       = "refs/heads/${var.branch_name}"
+    repo_type = "GITHUB"
+  }
+
+  git_file_source {
+    path      = "cloudbuild.yaml"
+    uri       = "https://github.com/${var.repo_owner}/${var.repo_name}"
+    revision  = "refs/heads/${var.branch_name}"
+    repo_type = "GITHUB"
+  }
+
+  substitutions = {
+    _ENV            = var.environment
+    _TFSTATE_BUCKET = google_storage_bucket.tfstate.name
+    _REGION         = var.region
+  }
+
+  depends_on = [
+    google_project_service.cloudbuild,
+  ]
 }
 
 resource "null_resource" "submit_community_builders" {
@@ -70,6 +130,10 @@ resource "null_resource" "submit_community_builders" {
     command     = "./submit-community-builders.sh ${google_project.realworld_example.project_id}"
     working_dir = "${path.module}/scripts"
   }
+
+  depends_on = [
+    google_project_service.cloudbuild,
+  ]
 }
 
 # Users service setup
@@ -114,6 +178,7 @@ resource "google_storage_bucket" "users_service_init_db" {
 ## Cloud Build triggers 
 resource "google_cloudbuild_trigger" "users_service" {
   project     = google_project.realworld_example.project_id
+  name        = "users-service-github-push-to-${var.users_service_branch_name}"
   description = "GitHub Repository Trigger ${var.users_service_repo_owner}/${var.users_service_repo_name} (${var.users_service_branch_name})"
 
   github {
