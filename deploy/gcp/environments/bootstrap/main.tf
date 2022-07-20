@@ -30,6 +30,12 @@ resource "google_project_service" "cloudbuild" {
   disable_on_destroy = false
 }
 
+# Used to process Artifact Registry events. See https://cloud.google.com/artifact-registry/docs/configure-notifications
+resource "google_pubsub_topic" "gcr" {
+  project = google_project.realworld_example.project_id
+  name    = "gcr"
+}
+
 # Users service setup
 
 ## Artifact registry
