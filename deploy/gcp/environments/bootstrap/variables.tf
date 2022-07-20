@@ -18,6 +18,26 @@ variable "region" {
   description = "The default GCP region for the created resources."
 }
 
+variable "environment" {
+  type        = string
+  description = "The environment of the bootstrapped project."
+}
+
+variable "repo_owner" {
+  type        = string
+  description = "This Github repository owner."
+}
+
+variable "repo_name" {
+  type        = string
+  description = "This Github repository name."
+}
+
+variable "branch_name" {
+  default     = "main"
+  description = "This Github branch name."
+}
+
 variable "users_service_repo_owner" {
   type        = string
   description = "The Users Service Github repository owner."
