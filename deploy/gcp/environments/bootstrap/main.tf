@@ -54,9 +54,39 @@ resource "google_project_iam_member" "cloudsql_admin" {
   ]
 }
 
+resource "google_project_iam_member" "network_admin" {
+  project = google_project.realworld_example.project_id
+  role    = "roles/compute.networkAdmin"
+  member  = "serviceAccount:${local.cloudbuild_sa_email}"
+
+  depends_on = [
+    google_project_service.cloudbuild
+  ]
+}
+
+resource "google_project_iam_member" "container_admin" {
+  project = google_project.realworld_example.project_id
+  role    = "roles/container.admin"
+  member  = "serviceAccount:${local.cloudbuild_sa_email}"
+
+  depends_on = [
+    google_project_service.cloudbuild
+  ]
+}
+
 resource "google_project_iam_member" "secretmanager_admin" {
   project = google_project.realworld_example.project_id
   role    = "roles/secretmanager.admin"
+  member  = "serviceAccount:${local.cloudbuild_sa_email}"
+
+  depends_on = [
+    google_project_service.cloudbuild
+  ]
+}
+
+resource "google_project_iam_member" "service_account_user" {
+  project = google_project.realworld_example.project_id
+  role    = "roles/iam.serviceAccountUser"
   member  = "serviceAccount:${local.cloudbuild_sa_email}"
 
   depends_on = [
@@ -97,10 +127,11 @@ resource "google_cloudbuild_trigger" "realworld_example_gcr_push_to_main" {
   filename = "cloudbuild.yaml"
 
   substitutions = {
-    _ENV              = var.environment
-    _TFSTATE_BUCKET   = google_storage_bucket.tfstate.name
-    _REGION           = var.region
-    _DB_INSTANCE_TIER = var.db_instance_tier
+    _ENV                       = var.environment
+    _TFSTATE_BUCKET            = google_storage_bucket.tfstate.name
+    _REGION                    = var.region
+    _DB_INSTANCE_TIER          = var.db_instance_tier
+    _GKE_PRIMARY_IP_CIDR_RANGE = var.gke_primary_ip_cidr_range
   }
 
   depends_on = [
@@ -131,10 +162,11 @@ resource "google_cloudbuild_trigger" "realworld_example_gcr_pub_sub" {
   }
 
   substitutions = {
-    _ENV              = var.environment
-    _TFSTATE_BUCKET   = google_storage_bucket.tfstate.name
-    _REGION           = var.region
-    _DB_INSTANCE_TIER = var.db_instance_tier
+    _ENV                       = var.environment
+    _TFSTATE_BUCKET            = google_storage_bucket.tfstate.name
+    _REGION                    = var.region
+    _DB_INSTANCE_TIER          = var.db_instance_tier
+    _GKE_PRIMARY_IP_CIDR_RANGE = var.gke_primary_ip_cidr_range
   }
 
   depends_on = [
@@ -161,10 +193,11 @@ resource "google_cloudbuild_trigger" "realworld_example_manual" {
   }
 
   substitutions = {
-    _ENV              = var.environment
-    _TFSTATE_BUCKET   = google_storage_bucket.tfstate.name
-    _REGION           = var.region
-    _DB_INSTANCE_TIER = var.db_instance_tier
+    _ENV                       = var.environment
+    _TFSTATE_BUCKET            = google_storage_bucket.tfstate.name
+    _REGION                    = var.region
+    _DB_INSTANCE_TIER          = var.db_instance_tier
+    _GKE_PRIMARY_IP_CIDR_RANGE = var.gke_primary_ip_cidr_range
   }
 
   depends_on = [
