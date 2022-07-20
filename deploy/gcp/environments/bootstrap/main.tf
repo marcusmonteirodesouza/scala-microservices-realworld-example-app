@@ -24,10 +24,54 @@ resource "google_storage_bucket" "tfstate" {
 
 # Enable APIs
 
+# This is used to enable all the other APIs
+resource "google_project_service" "serviceusage" {
+  project            = google_project.realworld_example.project_id
+  service            = "serviceusage.googleapis.com"
+  disable_on_destroy = false
+}
+
+resource "google_project_service" "cloudresourcemanager" {
+  project            = google_project.realworld_example.project_id
+  service            = "cloudresourcemanager.googleapis.com"
+  disable_on_destroy = false
+}
+
 resource "google_project_service" "cloudbuild" {
   project            = google_project.realworld_example.project_id
   service            = "cloudbuild.googleapis.com"
   disable_on_destroy = false
+}
+
+# Roles and permissions for the Cloudbuild Service Agent
+resource "google_project_iam_member" "cloudsql_admin" {
+  project = google_project.realworld_example.project_id
+  role    = "roles/cloudsql.admin"
+  member  = "serviceAccount:${local.cloudbuild_sa_email}"
+
+  depends_on = [
+    google_project_service.cloudbuild
+  ]
+}
+
+resource "google_project_iam_member" "secretmanager_admin" {
+  project = google_project.realworld_example.project_id
+  role    = "roles/secretmanager.admin"
+  member  = "serviceAccount:${local.cloudbuild_sa_email}"
+
+  depends_on = [
+    google_project_service.cloudbuild
+  ]
+}
+
+resource "google_project_iam_member" "service_usage_admin" {
+  project = google_project.realworld_example.project_id
+  role    = "roles/serviceusage.serviceUsageAdmin"
+  member  = "serviceAccount:${local.cloudbuild_sa_email}"
+
+  depends_on = [
+    google_project_service.cloudbuild
+  ]
 }
 
 # Used to process Artifact Registry events. See https://cloud.google.com/artifact-registry/docs/configure-notifications
@@ -53,9 +97,10 @@ resource "google_cloudbuild_trigger" "realworld_example_gcr_push_to_main" {
   filename = "cloudbuild.yaml"
 
   substitutions = {
-    _ENV            = var.environment
-    _TFSTATE_BUCKET = google_storage_bucket.tfstate.name
-    _REGION         = var.region
+    _ENV              = var.environment
+    _TFSTATE_BUCKET   = google_storage_bucket.tfstate.name
+    _REGION           = var.region
+    _DB_INSTANCE_TIER = var.db_instance_tier
   }
 
   depends_on = [
@@ -65,7 +110,7 @@ resource "google_cloudbuild_trigger" "realworld_example_gcr_push_to_main" {
 
 resource "google_cloudbuild_trigger" "realworld_example_gcr_pub_sub" {
   project     = google_project.realworld_example.project_id
-  name        = "realworld-example-app-gcp-pub-sub"
+  name        = "realworld-example-app-gcr-pub-sub"
   description = "GitHub Repository Trigger ${var.repo_owner}/${var.repo_name} (${var.branch_name}) gcr Pub/Sub"
 
   pubsub_config {
@@ -86,9 +131,10 @@ resource "google_cloudbuild_trigger" "realworld_example_gcr_pub_sub" {
   }
 
   substitutions = {
-    _ENV            = var.environment
-    _TFSTATE_BUCKET = google_storage_bucket.tfstate.name
-    _REGION         = var.region
+    _ENV              = var.environment
+    _TFSTATE_BUCKET   = google_storage_bucket.tfstate.name
+    _REGION           = var.region
+    _DB_INSTANCE_TIER = var.db_instance_tier
   }
 
   depends_on = [
@@ -115,9 +161,10 @@ resource "google_cloudbuild_trigger" "realworld_example_manual" {
   }
 
   substitutions = {
-    _ENV            = var.environment
-    _TFSTATE_BUCKET = google_storage_bucket.tfstate.name
-    _REGION         = var.region
+    _ENV              = var.environment
+    _TFSTATE_BUCKET   = google_storage_bucket.tfstate.name
+    _REGION           = var.region
+    _DB_INSTANCE_TIER = var.db_instance_tier
   }
 
   depends_on = [

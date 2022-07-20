@@ -38,6 +38,11 @@ variable "branch_name" {
   description = "This Github branch name."
 }
 
+variable "db_instance_tier" {
+  type        = string
+  description = "The machine type to use."
+}
+
 variable "users_service_repo_owner" {
   type        = string
   description = "The Users Service Github repository owner."
