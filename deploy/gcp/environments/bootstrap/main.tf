@@ -22,7 +22,17 @@ resource "google_storage_bucket" "tfstate" {
   }
 }
 
-# Artifact registry repositories for the services hosted by this project
+# Enable APIs
+
+resource "google_project_service" "cloudbuild" {
+  project            = google_project.realworld_example.project_id
+  service            = "cloudbuild.googleapis.com"
+  disable_on_destroy = false
+}
+
+# Users service setup
+
+## Artifact registry
 resource "google_project_service" "artifactregistry" {
   project            = google_project.realworld_example.project_id
   service            = "artifactregistry.googleapis.com"
@@ -43,12 +53,23 @@ resource "google_artifact_registry_repository" "users_service" {
   ]
 }
 
-# Cloud Build triggers for the services hosted by this project
-resource "google_project_service" "cloudbuild" {
-  project            = google_project.realworld_example.project_id
-  service            = "cloudbuild.googleapis.com"
-  disable_on_destroy = false
+## Storage Buckets
+resource "random_pet" "users_service_init_db_bucket" {
 }
+
+resource "google_storage_bucket" "users_service_init_db" {
+  project  = google_project.realworld_example.project_id
+  name     = random_pet.users_service_init_db_bucket.id
+  location = var.region
+
+  uniform_bucket_level_access = true
+
+  versioning {
+    enabled = true
+  }
+}
+
+## Cloud Build triggers 
 
 resource "google_cloudbuild_trigger" "users_service_cloud_build_trigger" {
   project     = google_project.realworld_example.project_id
@@ -65,9 +86,10 @@ resource "google_cloudbuild_trigger" "users_service_cloud_build_trigger" {
   filename = "cloudbuild.yaml"
 
   substitutions = {
-    "_LOCATION"   = var.region
-    "_REPOSITORY" = google_artifact_registry_repository.users_service.name
-    "_IMAGE"      = "users-service"
+    "_LOCATION"      = var.region
+    "_REPOSITORY"    = google_artifact_registry_repository.users_service.name
+    "_IMAGE"         = "users-service"
+    "_INITDB_BUCKET" = google_storage_bucket.users_service_init_db.url
   }
 
   depends_on = [
