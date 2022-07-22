@@ -28,3 +28,9 @@ module "gke_autopilot_primary_cluster" {
   network    = module.network.name
   subnetwork = module.network.gke_primary_subnetwork
 }
+
+module "users_service" {
+  source = "../../modules/users_service"
+
+  database_instance = module.postgres_cloud_sql_instance.name
+}
