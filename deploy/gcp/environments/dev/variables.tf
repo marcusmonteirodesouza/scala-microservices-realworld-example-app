@@ -17,3 +17,8 @@ variable "db_instance_tier" {
   type        = string
   description = "The machine type to use."
 }
+
+variable "users_service_initdb_bucket" {
+  type        = string
+  description = "The name of the GCS bucket where the initdb.sql file is stored."
+}

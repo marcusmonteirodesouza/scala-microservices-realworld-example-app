@@ -32,5 +32,7 @@ module "gke_autopilot_primary_cluster" {
 module "users_service" {
   source = "../../modules/users_service"
 
-  database_instance = module.postgres_cloud_sql_instance.name
+  database_instance           = module.postgres_cloud_sql_instance.name
+  database_instance_sa_email  = module.postgres_cloud_sql_instance.sa_email
+  users_service_initdb_bucket = var.users_service_initdb_bucket
 }

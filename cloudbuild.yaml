@@ -13,4 +13,5 @@ steps:
       - "TF_VAR_region=${_REGION}"
       - "TF_VAR_db_instance_tier=${_DB_INSTANCE_TIER}"
       - "TF_VAR_gke_primary_ip_cidr_range=${_GKE_PRIMARY_IP_CIDR_RANGE}"
+      - "TF_VAR_users_service_initdb_bucket=${_USERS_SERVICE_INITDB_BUCKET}"
 timeout: 2700s

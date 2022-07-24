@@ -43,7 +43,7 @@ resource "google_project_service" "cloudbuild" {
   disable_on_destroy = false
 }
 
-# Roles and permissions for the Cloudbuild Service Agent
+# Roles and permissions for the Cloudbuild Service Account
 resource "google_project_iam_member" "cloudsql_admin" {
   project = google_project.realworld_example.project_id
   role    = "roles/cloudsql.admin"
@@ -104,6 +104,12 @@ resource "google_project_iam_member" "service_usage_admin" {
   ]
 }
 
+resource "google_storage_bucket_iam_member" "users_service_initdb_admin" {
+  bucket = google_storage_bucket.users_service_initdb.name
+  role   = "roles/storage.admin"
+  member = "serviceAccount:${local.cloudbuild_sa_email}"
+}
+
 # Used to process Artifact Registry events. See https://cloud.google.com/artifact-registry/docs/configure-notifications
 resource "google_pubsub_topic" "gcr" {
   project = google_project.realworld_example.project_id
@@ -127,11 +133,12 @@ resource "google_cloudbuild_trigger" "realworld_example_gcr_push_to_main" {
   filename = "cloudbuild.yaml"
 
   substitutions = {
-    _ENV                       = var.environment
-    _TFSTATE_BUCKET            = google_storage_bucket.tfstate.name
-    _REGION                    = var.region
-    _DB_INSTANCE_TIER          = var.db_instance_tier
-    _GKE_PRIMARY_IP_CIDR_RANGE = var.gke_primary_ip_cidr_range
+    _ENV                         = var.environment
+    _TFSTATE_BUCKET              = google_storage_bucket.tfstate.name
+    _REGION                      = var.region
+    _DB_INSTANCE_TIER            = var.db_instance_tier
+    _GKE_PRIMARY_IP_CIDR_RANGE   = var.gke_primary_ip_cidr_range
+    _USERS_SERVICE_INITDB_BUCKET = google_storage_bucket.users_service_initdb.name
   }
 
   depends_on = [
@@ -162,42 +169,12 @@ resource "google_cloudbuild_trigger" "realworld_example_gcr_pub_sub" {
   }
 
   substitutions = {
-    _ENV                       = var.environment
-    _TFSTATE_BUCKET            = google_storage_bucket.tfstate.name
-    _REGION                    = var.region
-    _DB_INSTANCE_TIER          = var.db_instance_tier
-    _GKE_PRIMARY_IP_CIDR_RANGE = var.gke_primary_ip_cidr_range
-  }
-
-  depends_on = [
-    google_project_service.cloudbuild,
-  ]
-}
-
-resource "google_cloudbuild_trigger" "realworld_example_manual" {
-  project     = google_project.realworld_example.project_id
-  name        = "realworld-example-app-manual"
-  description = "GitHub Repository Trigger ${var.repo_owner}/${var.repo_name} (${var.branch_name}) Manual"
-
-  source_to_build {
-    uri       = "https://github.com/${var.repo_owner}/${var.repo_name}"
-    ref       = "refs/heads/${var.branch_name}"
-    repo_type = "GITHUB"
-  }
-
-  git_file_source {
-    path      = "cloudbuild.yaml"
-    uri       = "https://github.com/${var.repo_owner}/${var.repo_name}"
-    revision  = "refs/heads/${var.branch_name}"
-    repo_type = "GITHUB"
-  }
-
-  substitutions = {
-    _ENV                       = var.environment
-    _TFSTATE_BUCKET            = google_storage_bucket.tfstate.name
-    _REGION                    = var.region
-    _DB_INSTANCE_TIER          = var.db_instance_tier
-    _GKE_PRIMARY_IP_CIDR_RANGE = var.gke_primary_ip_cidr_range
+    _ENV                         = var.environment
+    _TFSTATE_BUCKET              = google_storage_bucket.tfstate.name
+    _REGION                      = var.region
+    _DB_INSTANCE_TIER            = var.db_instance_tier
+    _GKE_PRIMARY_IP_CIDR_RANGE   = var.gke_primary_ip_cidr_range
+    _USERS_SERVICE_INITDB_BUCKET = google_storage_bucket.users_service_initdb.name
   }
 
   depends_on = [
@@ -240,12 +217,12 @@ resource "google_artifact_registry_repository" "users_service" {
 }
 
 ## Storage Buckets
-resource "random_pet" "users_service_init_db_bucket" {
+resource "random_pet" "users_service_initdb_bucket" {
 }
 
-resource "google_storage_bucket" "users_service_init_db" {
+resource "google_storage_bucket" "users_service_initdb" {
   project  = google_project.realworld_example.project_id
-  name     = random_pet.users_service_init_db_bucket.id
+  name     = random_pet.users_service_initdb_bucket.id
   location = var.region
 
   uniform_bucket_level_access = true
@@ -256,7 +233,7 @@ resource "google_storage_bucket" "users_service_init_db" {
 }
 
 ## Cloud Build triggers 
-resource "google_cloudbuild_trigger" "users_service" {
+resource "google_cloudbuild_trigger" "users_service_push_to_main" {
   project     = google_project.realworld_example.project_id
   name        = "users-service-github-push-to-${var.users_service_branch_name}"
   description = "GitHub Repository Trigger ${var.users_service_repo_owner}/${var.users_service_repo_name} (${var.users_service_branch_name})"
@@ -272,10 +249,10 @@ resource "google_cloudbuild_trigger" "users_service" {
   filename = "cloudbuild.yaml"
 
   substitutions = {
-    "_LOCATION"      = var.region
-    "_REPOSITORY"    = google_artifact_registry_repository.users_service.name
-    "_IMAGE"         = "users-service"
-    "_INITDB_BUCKET" = google_storage_bucket.users_service_init_db.url
+    _LOCATION      = var.region
+    _REPOSITORY    = google_artifact_registry_repository.users_service.name
+    _IMAGE         = "users-service"
+    _INITDB_BUCKET = google_storage_bucket.users_service_initdb.url
   }
 
   depends_on = [
