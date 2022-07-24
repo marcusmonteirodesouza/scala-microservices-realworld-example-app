@@ -1,10 +1,9 @@
-resource "google_project_service" "sqladmin" {
-  service            = "sqladmin.googleapis.com"
-  disable_on_destroy = false
+data "google_compute_network" "network" {
+  name = var.network
 }
 
-resource "google_project_service" "secretmanager" {
-  service            = "secretmanager.googleapis.com"
+resource "google_project_service" "sqladmin" {
+  service            = "sqladmin.googleapis.com"
   disable_on_destroy = false
 }
 
@@ -12,17 +11,50 @@ resource "random_id" "database_instance_suffix" {
   byte_length = 4
 }
 
+resource "google_compute_global_address" "main" {
+  name          = "${local.instance_name}-private-ip-address"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = var.network
+}
+
+resource "google_project_service" "servicenetworking" {
+  service            = "servicenetworking.googleapis.com"
+  disable_on_destroy = false
+}
+
+resource "google_service_networking_connection" "private_vpc_connection" {
+  network                 = var.network
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.main.name]
+
+  depends_on = [
+    google_project_service.servicenetworking
+  ]
+}
+
 resource "google_sql_database_instance" "main" {
-  name             = "main-instance-${random_id.database_instance_suffix.hex}"
+  name             = local.instance_name
   database_version = "POSTGRES_14"
 
   settings {
     tier = var.tier
+    ip_configuration {
+      ipv4_enabled    = false
+      private_network = data.google_compute_network.network.id
+    }
   }
 
   depends_on = [
     google_project_service.sqladmin,
+    google_service_networking_connection.private_vpc_connection
   ]
+}
+
+resource "google_project_service" "secretmanager" {
+  service            = "secretmanager.googleapis.com"
+  disable_on_destroy = false
 }
 
 resource "random_password" "admin_user" {

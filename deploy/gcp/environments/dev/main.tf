@@ -17,7 +17,8 @@ module "network" {
 module "postgres_cloud_sql_instance" {
   source = "../../modules/postgres_cloud_sql_instance"
 
-  tier = var.db_instance_tier
+  network = module.network.name
+  tier    = var.db_instance_tier
 }
 
 module "gke_autopilot_primary_cluster" {
