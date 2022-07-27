@@ -133,12 +133,21 @@ resource "google_cloudbuild_trigger" "realworld_example_gcr_push_to_main" {
   filename = "cloudbuild.yaml"
 
   substitutions = {
-    _ENV                         = var.environment
-    _TFSTATE_BUCKET              = google_storage_bucket.tfstate.name
-    _REGION                      = var.region
-    _DB_INSTANCE_TIER            = var.db_instance_tier
-    _GKE_PRIMARY_IP_CIDR_RANGE   = var.gke_primary_ip_cidr_range
-    _USERS_SERVICE_INITDB_BUCKET = google_storage_bucket.users_service_initdb.name
+    _ENV                                                      = var.environment
+    _TFSTATE_BUCKET                                           = google_storage_bucket.tfstate.name
+    _REGION                                                   = var.region
+    _DB_INSTANCE_TIER                                         = var.db_instance_tier
+    _GKE_PRIMARY_IP_CIDR_RANGE                                = var.gke_primary_ip_cidr_range
+    _USERS_SERVICE_INITDB_BUCKET                              = google_storage_bucket.users_service_initdb.name
+    _USERS_SERVICE_REPLICAS                                   = local.users_service_replicas
+    _USERS_SERVICE_IMAGE                                      = local.users_service_image
+    _USERS_SERVICE_DATABASE_NUM_THREADS                       = local.users_service_database_num_threads
+    _USERS_SERVICE_DATABASE_MIN_CONNECTIONS                   = local.users_service_database_min_connections
+    _USERS_SERVICE_DATABASE_MAX_CONNECTIONS                   = local.users_service_database_max_connections
+    _USERS_SERVICE_DATABASE_QUEUE_SIZE                        = local.users_service_database_queue_size
+    _USERS_SERVICE_HARD_TERMINATION_DEADLINE_DURATION_SECONDS = local.users_service_hard_termination_deadline_duration_seconds
+    _USERS_SERVICE_JWT_ISSUER                                 = local.users_service_jwt_issuer
+    _USERS_SERVICE_JWT_SECONDS_TO_EXPIRE                      = local.users_service_jwt_seconds_to_expire
   }
 
   depends_on = [
@@ -169,12 +178,21 @@ resource "google_cloudbuild_trigger" "realworld_example_gcr_pub_sub" {
   }
 
   substitutions = {
-    _ENV                         = var.environment
-    _TFSTATE_BUCKET              = google_storage_bucket.tfstate.name
-    _REGION                      = var.region
-    _DB_INSTANCE_TIER            = var.db_instance_tier
-    _GKE_PRIMARY_IP_CIDR_RANGE   = var.gke_primary_ip_cidr_range
-    _USERS_SERVICE_INITDB_BUCKET = google_storage_bucket.users_service_initdb.name
+    _ENV                                                      = var.environment
+    _TFSTATE_BUCKET                                           = google_storage_bucket.tfstate.name
+    _REGION                                                   = var.region
+    _DB_INSTANCE_TIER                                         = var.db_instance_tier
+    _GKE_PRIMARY_IP_CIDR_RANGE                                = var.gke_primary_ip_cidr_range
+    _USERS_SERVICE_INITDB_BUCKET                              = google_storage_bucket.users_service_initdb.name
+    _USERS_SERVICE_REPLICAS                                   = local.users_service_replicas
+    _USERS_SERVICE_IMAGE                                      = local.users_service_image
+    _USERS_SERVICE_DATABASE_NUM_THREADS                       = local.users_service_database_num_threads
+    _USERS_SERVICE_DATABASE_MIN_CONNECTIONS                   = local.users_service_database_min_connections
+    _USERS_SERVICE_DATABASE_MAX_CONNECTIONS                   = local.users_service_database_max_connections
+    _USERS_SERVICE_DATABASE_QUEUE_SIZE                        = local.users_service_database_queue_size
+    _USERS_SERVICE_HARD_TERMINATION_DEADLINE_DURATION_SECONDS = local.users_service_hard_termination_deadline_duration_seconds
+    _USERS_SERVICE_JWT_ISSUER                                 = local.users_service_jwt_issuer
+    _USERS_SERVICE_JWT_SECONDS_TO_EXPIRE                      = local.users_service_jwt_seconds_to_expire
   }
 
   depends_on = [
@@ -251,7 +269,7 @@ resource "google_cloudbuild_trigger" "users_service_push_to_main" {
   substitutions = {
     _LOCATION      = var.region
     _REPOSITORY    = google_artifact_registry_repository.users_service.name
-    _IMAGE         = "users-service"
+    _IMAGE         = local.users_service_image_name
     _INITDB_BUCKET = google_storage_bucket.users_service_initdb.url
   }
 

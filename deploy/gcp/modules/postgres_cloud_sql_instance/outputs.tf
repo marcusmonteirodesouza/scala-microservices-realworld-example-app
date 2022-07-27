@@ -6,6 +6,10 @@ output "private_ip_address" {
   value = google_compute_global_address.main.address
 }
 
+output "port" {
+  value = 5432
+}
+
 output "sa_email" {
   value = google_sql_database_instance.main.service_account_email_address
 }

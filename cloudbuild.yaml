@@ -14,4 +14,13 @@ steps:
       - "TF_VAR_db_instance_tier=${_DB_INSTANCE_TIER}"
       - "TF_VAR_gke_primary_ip_cidr_range=${_GKE_PRIMARY_IP_CIDR_RANGE}"
       - "TF_VAR_users_service_initdb_bucket=${_USERS_SERVICE_INITDB_BUCKET}"
+      - "TF_VAR_users_service_replicas=${_USERS_SERVICE_REPLICAS}"
+      - "TF_VAR_users_service_image=${_USERS_SERVICE_IMAGE}"
+      - "TF_VAR_users_service_database_num_threads=${_USERS_SERVICE_DATABASE_NUM_THREADS}"
+      - "TF_VAR_users_service_database_min_connections=${_USERS_SERVICE_DATABASE_MIN_CONNECTIONS}"
+      - "TF_VAR_users_service_database_max_connections=${_USERS_SERVICE_DATABASE_MAX_CONNECTIONS}"
+      - "TF_VAR_users_service_database_queue_size=${_USERS_SERVICE_DATABASE_QUEUE_SIZE}"
+      - "TF_VAR_users_service_hard_termination_deadline_duration_seconds=${_USERS_SERVICE_HARD_TERMINATION_DEADLINE_DURATION_SECONDS}"
+      - "TF_VAR_users_service_jwt_issuer=${_USERS_SERVICE_JWT_ISSUER}"
+      - "TF_VAR_users_service_jwt_seconds_to_expire=${_USERS_SERVICE_JWT_SECONDS_TO_EXPIRE}"
 timeout: 2700s
