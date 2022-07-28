@@ -60,7 +60,7 @@ resource "google_project_service" "secretmanager" {
 }
 
 resource "google_secret_manager_secret" "jwt_secret_key" {
-  secret_id = "users-service-jwt-key"
+  secret_id = "${local.app}-jwt-key"
 
   replication {
     automatic = true
@@ -79,14 +79,14 @@ resource "google_secret_manager_secret_version" "jwt_secret_key" {
 
 resource "kubernetes_namespace" "users_service" {
   metadata {
-    name = "users-service-namespace"
+    name = local.app
   }
 }
 
 resource "kubernetes_secret" "users_service" {
   metadata {
     namespace = local.kubernetes_namespace
-    name      = "users-service-secret"
+    name      = "${local.app}-secret"
   }
 
   data = {
@@ -102,7 +102,7 @@ resource "kubernetes_secret" "users_service" {
 resource "kubernetes_deployment" "users_service_deployment" {
   metadata {
     namespace = local.kubernetes_namespace
-    name      = "users-service-deployment"
+    name      = "${local.app}-deployment"
   }
 
   spec {
@@ -110,23 +110,23 @@ resource "kubernetes_deployment" "users_service_deployment" {
 
     selector {
       match_labels = {
-        app = "users-service"
+        app = local.app
       }
     }
 
     template {
       metadata {
         labels = {
-          app = "users-service"
+          app = local.app
         }
       }
 
       spec {
         container {
           image = "${var.image}@${data.docker_registry_image.users_service.sha256_digest}"
-          name  = "users-service-pod"
+          name  = "${local.app}-pod"
 
-          liveness_probe {
+          readiness_probe {
             http_get {
               path = "/healthcheck"
               port = var.container_port
@@ -176,5 +176,21 @@ resource "kubernetes_deployment" "users_service_deployment" {
         }
       }
     }
+  }
+}
+
+resource "kubernetes_service" "users_service_service" {
+  metadata {
+    name = "${local.app}-service"
+  }
+  spec {
+    selector = {
+      app = local.app
+    }
+    port {
+      port = 80
+    }
+
+    type = "ClusterIP"
   }
 }
