@@ -72,3 +72,11 @@ module "users_service" {
   jwt_issuer                                 = var.users_service_jwt_issuer
   jwt_seconds_to_expire                      = var.users_service_jwt_seconds_to_expire
 }
+
+module "gke_auto_pilot_ingress" {
+  source = "../../modules/gke_autopilot_ingress"
+
+  cluster_name               = module.gke_autopilot_primary_cluster.name
+  users_service_service_name = module.users_service.service_name
+  users_service_service_port = module.users_service.service_port
+}

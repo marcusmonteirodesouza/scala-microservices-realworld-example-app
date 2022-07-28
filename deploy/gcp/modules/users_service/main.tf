@@ -77,16 +77,9 @@ resource "google_secret_manager_secret_version" "jwt_secret_key" {
   secret_data = random_password.jwt_secret_key.result
 }
 
-resource "kubernetes_namespace" "users_service" {
-  metadata {
-    name = local.app
-  }
-}
-
 resource "kubernetes_secret" "users_service" {
   metadata {
-    namespace = local.kubernetes_namespace
-    name      = "${local.app}-secret"
+    name = "${local.app}-secret"
   }
 
   data = {
@@ -101,8 +94,7 @@ resource "kubernetes_secret" "users_service" {
 
 resource "kubernetes_deployment" "users_service_deployment" {
   metadata {
-    namespace = local.kubernetes_namespace
-    name      = "${local.app}-deployment"
+    name = "${local.app}-deployment"
   }
 
   spec {
@@ -126,12 +118,13 @@ resource "kubernetes_deployment" "users_service_deployment" {
           image = "${var.image}@${data.docker_registry_image.users_service.sha256_digest}"
           name  = "${local.app}-pod"
 
-          readiness_probe {
+          liveness_probe {
             http_get {
-              path = "/healthcheck"
+              path = "/"
               port = var.container_port
             }
           }
+
           env {
             name  = "DB_NUM_THREADS"
             value = var.database_num_threads
@@ -188,9 +181,10 @@ resource "kubernetes_service" "users_service_service" {
       app = local.app
     }
     port {
-      port = 80
+      port        = 80
+      target_port = 8080
     }
 
-    type = "ClusterIP"
+    type = "NodePort"
   }
 }
